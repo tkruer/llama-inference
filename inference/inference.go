@@ -118,8 +118,10 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 	var token int32 = 1 // init with token 1 (=BOS), as done in Llama-2 sentencepiece tokenizer
 	var pos int32 = 0   // position in the sequence
 
-	fmt.Println("<s>")
+	var tokenStr string
 	var output strings.Builder
+
+	output.WriteString(tokenStr)
 
 	end := time.Now()
 	fmt.Printf("\nachieved tok/s: %f\n", float64(steps-1)/end.Sub(start).Seconds())
@@ -141,7 +143,7 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 				next = sample(state.Logits)
 			}
 		}
-		var tokenStr string
+		// var tokenStr string
 		if token == 1 && vocab[next][0] == ' ' {
 			tokenStr = vocab[next][1:]
 		} else {
@@ -158,6 +160,7 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 		}
 	}
 	return output.String()
+
 }
 
 func allocWeights(w *TransformerWeights, p *Config) {

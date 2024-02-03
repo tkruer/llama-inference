@@ -1,58 +1,56 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/tkruer/llama-inference/inference"
-	"io"
 	"net/http"
+	"strings"
 )
+
+func RemoveTagFromString(s string) string {
+	return strings.ReplaceAll(s, "<s>", "<br>")
+}
 
 type requestBody struct {
 	Message string `json:"message"`
 }
 
 func messageHandler(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != "POST" {
 		http.Error(w, "Method is not supported.", http.StatusMethodNotAllowed)
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusInternalServerError)
-		return
-	}
-	defer r.Body.Close()
-
-	var msg requestBody
-	err = json.Unmarshal(body, &msg)
-	if err != nil {
-		http.Error(w, "Error parsing request body", http.StatusBadRequest)
+		http.Error(w, "Error parsing form data", http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Printf("Received message: %s\n", msg.Message)
+	message := r.FormValue("message")
 
-	result := inference.Inference(msg.Message, "./model/stories15M.bin", 1.0, 256)
+	fmt.Printf("Received message: %s\n", message)
+
+	result := inference.Inference(message, "./model/stories15M.bin", 1.0, 256)
 	if err != nil {
 		http.Error(w, "Error generating text", http.StatusInternalServerError)
 		return
 	}
 
+	resultClean := RemoveTagFromString(result)
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	w.Write([]byte(resultClean))
 }
 
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-
-		w.Write([]byte("<p>Wrong way, use route <code>/message</code> instead</p>"))
+		http.ServeFile(w, r, "./public/views/index.html")
 	})
 
-	http.HandleFunc("/message", messageHandler)
+	http.HandleFunc("/api/message", messageHandler)
 
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
