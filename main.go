@@ -53,7 +53,7 @@ func main() {
 	http.HandleFunc("/api/message", messageHandler)
 
 	fmt.Println("Server starting on http://localhost:10000")
-	if err := http.ListenAndServe(":10000", nil); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:10000", nil); err != nil {
 		panic(err)
 	}
 }

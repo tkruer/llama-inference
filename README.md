@@ -5,11 +5,7 @@
 Llama-inference is a simple implementation of Karpathy's [llama2.c](https://github.com/karpathy/llama2.c) as a Go net/http webserver. 
 The backbone of this project is really rooted around using [go-llama2](https://github.com/tmc/go-llama2). This for now is just a fun weekend project to continue to learn the MLOps side of things and break away from using Python as a backend for ML projects.
 
-# Setting Up `llama-inference`
-
-`llama-inference` is a Go-based web server application that demonstrates a simple machine learning inference using the Go net/http package. It serves an HTML form where users can input text to generate stories based on the input.
-
-## Prerequisites
+### Setup & Prerequisites For Running Locally
 
 Before setting up the `llama-inference` project, ensure you have the following installed on your system:
 
@@ -55,6 +51,6 @@ Before setting up the `llama-inference` project, ensure you have the following i
     go run main.go
     ```
 
-    This command compiles and starts the web server. By default, the server will listen on `http://localhost:8080`. You can open this URL in your web browser to interact with the application.
+    This command compiles and starts the web server. By default, the server will listen on `http://localhost:10000`. You can open this URL in your web browser to interact with the application.
 
 
