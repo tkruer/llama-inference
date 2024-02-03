@@ -22,4 +22,4 @@ COPY --from=builder /app/model ./model
 
 EXPOSE 10000
 
-CMD ["go", "run", "main.go"]
+CMD ["./llama-inference"]
