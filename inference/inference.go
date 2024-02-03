@@ -123,9 +123,6 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 
 	output.WriteString(tokenStr)
 
-	end := time.Now()
-	fmt.Printf("\nachieved tok/s: %f\n", float64(steps-1)/end.Sub(start).Seconds())
-
 	for pos < steps {
 		transformer(token, pos, &config, &state, &weights)
 
@@ -143,7 +140,7 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 				next = sample(state.Logits)
 			}
 		}
-		// var tokenStr string
+
 		if token == 1 && vocab[next][0] == ' ' {
 			tokenStr = vocab[next][1:]
 		} else {
@@ -274,34 +271,25 @@ func transformer(token int32, pos int32, p *Config, s *RunState, w *TransformerW
 	hiddenDim := p.HiddenDim
 	headSize := dim / p.NHeads
 
-	// copy the token embedding into x
 	contentRow := w.TokenEmbeddingTable[token*dim : (token+1)*dim]
 	copy(x, contentRow)
-
-	// pluck out the "pos" row of freqCisReal and freqCisImag
 
 	freqCisRealRow := w.FreqCisReal[pos*headSize/2 : (pos+1)*headSize/2]
 	freqCisImagRow := w.FreqCisImag[pos*headSize/2 : (pos+1)*headSize/2]
 
-	// forward all the layers
 	xSum := float32(0.0)
 	_ = xSum
 	for l := int32(0); l < p.NLayers; l++ {
-		// attention rmsnorm
 		rmsNorm(s.Xb, x, w.RmsAttWeight[l*dim:(l+1)*dim])
 
-		// qkv matmuls for this position
 		matmul(s.Q, s.Xb, w.Wq[l*dim*dim:(l+1)*dim*dim])
 		matmul(s.K, s.Xb, w.Wk[l*dim*dim:(l+1)*dim*dim])
 		matmul(s.V, s.Xb, w.Wv[l*dim*dim:(l+1)*dim*dim])
 
-		// apply RoPE rotation to the q and k vectors for each head
 		for h := int32(0); h < p.NHeads; h++ {
-			// get the q and k vectors for this head
 			q := s.Q[h*headSize : (h+1)*headSize]
 			k := s.K[h*headSize : (h+1)*headSize]
 
-			// rotate q and k by the freqCisReal and freqCisImag
 			for i := int32(0); i < headSize; i += 2 {
 				q0 := q[i]
 				q1 := q[i+1]
@@ -316,28 +304,21 @@ func transformer(token int32, pos int32, p *Config, s *RunState, w *TransformerW
 			}
 		}
 
-		// save key,value at this time step (pos) to our kv cache
 		loff := l * p.SeqLen * dim // kv cache layer offset for convenience
 		keyCacheRow := s.KeyCache[loff+pos*dim : loff+(pos+1)*dim]
 		valueCacheRow := s.ValueCache[loff+pos*dim : loff+(pos+1)*dim]
 		copy(keyCacheRow, s.K)
 		copy(valueCacheRow, s.V)
 
-		// multihead attention. iterate over all heads
 		for h := int32(0); h < p.NHeads; h++ {
-			// get the query vector for this head
 			q := s.Q[h*headSize : (h+1)*headSize]
-			// iterate over all timesteps, including the current one
 			for t := int32(0); t <= pos; t++ {
-				// get the key vector for this head and at this timestep
 				k := s.KeyCache[loff+t*dim+h*headSize : loff+t*dim+(h+1)*headSize]
-				// calculate the attention score as the dot product of q and k
 				score := float32(0.0)
 				for i := int32(0); i < headSize; i++ {
 					score += q[i] * k[i]
 				}
 				score = score / float32(math.Sqrt(float64(headSize)))
-				// save the score to the attention buffer
 			}
 
 			// softmax the scores to get attention weights, from 0..pos inclusively

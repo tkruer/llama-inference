@@ -20,6 +20,6 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 COPY --from=builder /app/model ./model
 
-EXPOSE 8080
+EXPOSE 10000
 
 CMD ["./main"]
