@@ -157,7 +157,6 @@ func Inference(message, checkpointPath string, temperature float64, steps int32)
 		}
 	}
 	return output.String()
-
 }
 
 func allocWeights(w *TransformerWeights, p *Config) {
